@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QAction, QDoubleValidator
 from PyQt6.QtWidgets import (
     QFileDialog,
@@ -74,7 +75,7 @@ class RecordWindow(QMainWindow):
         time_row = QHBoxLayout()
         self.ed_time = QLineEdit()
         self.ed_time.setValidator(QDoubleValidator())
-        self.ed_time.setPlaceholderText("время")
+        self.ed_time.setPlaceholderText("время от старта")
         self.btn_now = QPushButton("Сейчас")
         self.btn_now.clicked.connect(self._fill_now)
         self.lbl_time = QLabel("Время:")
@@ -82,6 +83,15 @@ class RecordWindow(QMainWindow):
         time_row.addWidget(self.ed_time, stretch=1)
         time_row.addWidget(self.btn_now)
         ev.addLayout(time_row)
+
+        # живые часы + человекочитаемая подсказка «сейчас»
+        self.lbl_clock = QLabel()
+        self.lbl_clock.setStyleSheet("color: gray;")
+        ev.addWidget(self.lbl_clock)
+        self._clock = QTimer(self)
+        self._clock.timeout.connect(self._tick_clock)
+        self._clock.start(1000)
+        self._tick_clock()
 
         self.values_form = QFormLayout()   # поля измеряемых величин (по схеме)
         ev.addLayout(self.values_form)
@@ -113,7 +123,7 @@ class RecordWindow(QMainWindow):
     def _build_menu(self) -> None:
         m_file = self.menuBar().addMenu("Файл")
         for title, slot in [
-            ("Новая/Открыть базу…", self._open_db_dialog),
+            ("Новый эксперимент / открыть базу…", self._open_db_dialog),
             ("Экспорт всех…", self._export_all),
         ]:
             act = QAction(title, self)
@@ -121,7 +131,7 @@ class RecordWindow(QMainWindow):
             m_file.addAction(act)
 
         m_exp = self.menuBar().addMenu("Эксперимент")
-        act = QAction("Схема эксперимента…", self)
+        act = QAction("Поля эксперимента (схема)…", self)
         act.triggered.connect(self._edit_schema)
         m_exp.addAction(act)
 
@@ -132,6 +142,17 @@ class RecordWindow(QMainWindow):
         self._rebuild_value_fields()
         self._reload_curves()
         self._update_time_label()
+        # Новый (пустой) эксперимент — сразу предложить задать поля и ограничения.
+        QTimer.singleShot(0, self._maybe_prompt_schema)
+
+    def _maybe_prompt_schema(self) -> None:
+        if self.db and self.db.is_empty_schema():
+            QMessageBox.information(
+                self, "Новый эксперимент",
+                "Сначала задайте поля эксперимента и ограничения на них "
+                "(типы, варианты для списков, границы для чисел).",
+            )
+            self._edit_schema()
 
     def _open_db_dialog(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
@@ -205,11 +226,26 @@ class RecordWindow(QMainWindow):
             self.lbl_time.setText(f"Время ({self.db.time_unit}):")
 
     # ---------- точки ----------
+    @staticmethod
+    def _fmt_time(t: float) -> str:
+        """Человекочитаемое число времени (до 2 знаков, без лишних нулей)."""
+        s = f"{t:.2f}".rstrip("0").rstrip(".")
+        return s or "0"
+
+    def _tick_clock(self) -> None:
+        now = datetime.now().strftime("%H:%M:%S")
+        txt = f"текущее время: {now}"
+        cid = self._current_curve_id()
+        if cid is not None and self.db:
+            el = self.db.elapsed_since_start(cid)
+            txt += f"   ·   от старта: {self._fmt_time(el)} {self.db.time_unit}"
+        self.lbl_clock.setText(txt)
+
     def _fill_now(self) -> None:
         cid = self._current_curve_id()
         if cid is None:
             return
-        self.ed_time.setText(f"{self.db.elapsed_since_start(cid):.3f}")
+        self.ed_time.setText(self._fmt_time(self.db.elapsed_since_start(cid)))
 
     def _add_point(self) -> None:
         cid = self._current_curve_id()
@@ -243,7 +279,8 @@ class RecordWindow(QMainWindow):
             except ValueError:
                 QMessageBox.warning(self, "Точка", f"Значение «{name}» должно быть числом.")
                 return
-        self.db.add_point(cid, t, values)
+        self.db.add_point(cid, t, values,
+                         recorded_iso=datetime.now().isoformat(sep=" ", timespec="seconds"))
         self.ed_time.clear()
         for ed in self._value_edits.values():
             ed.clear()
@@ -263,7 +300,7 @@ class RecordWindow(QMainWindow):
         self.points_table.setRowCount(len(points))
         vars_ = self.db.measured_names()
         for r, p in enumerate(points):
-            t_item = QTableWidgetItem(f"{p.t:g}")
+            t_item = QTableWidgetItem(self._fmt_time(p.t))
             t_item.setData(Qt.ItemDataRole.UserRole, p.id)
             self.points_table.setItem(r, 0, t_item)
             for c, var in enumerate(vars_, start=1):

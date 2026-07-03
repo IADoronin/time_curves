@@ -27,17 +27,22 @@ def main() -> int:
     db.time_unit = "h"
 
     # схема: 1 enum + 1 numeric свойство, 2 измеряемые величины
+    assert db.is_empty_schema()
     db.replace_properties([
         Property("substrate", "enum", ["malate", "acetate"], None, 0),
-        Property("conc_mM", "numeric", None, "mM", 1),
+        Property("conc_mM", "numeric", None, "mM", 1, min_val=0.0, max_val=50.0),
     ])
     db.replace_measured_vars([
         MeasuredVar("OD600", None, 0),
         MeasuredVar("pH", None, 1),
     ])
-    assert [p.name for p in db.list_properties()] == ["substrate", "conc_mM"]
+    props = db.list_properties()
+    assert [p.name for p in props] == ["substrate", "conc_mM"]
+    assert props[0].options == ["malate", "acetate"]           # ограничение enum
+    assert props[1].min_val == 0.0 and props[1].max_val == 50.0  # границы numeric
     assert db.measured_names() == ["OD600", "pH"]
-    print("[ok] схема: свойства + измеряемые величины заданы")
+    assert not db.is_empty_schema()
+    print("[ok] схема: поля + ограничения (варианты enum, границы numeric) заданы")
 
     # кривая с meta
     cid = db.create_curve(

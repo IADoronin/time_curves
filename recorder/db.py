@@ -35,7 +35,9 @@ CREATE TABLE IF NOT EXISTS properties (
     kind     TEXT NOT NULL CHECK (kind IN ('enum','numeric')),
     options  TEXT,               -- JSON-список вариантов для enum
     unit     TEXT,
-    position INTEGER NOT NULL
+    position INTEGER NOT NULL,
+    min_val  REAL,               -- ограничение numeric: нижняя граница
+    max_val  REAL                -- ограничение numeric: верхняя граница
 );
 CREATE TABLE IF NOT EXISTS measured_vars (
     id       INTEGER PRIMARY KEY,
@@ -74,10 +76,12 @@ CREATE TABLE IF NOT EXISTS point_values (
 @dataclass
 class Property:
     name: str
-    kind: str                 # 'enum' | 'numeric'
-    options: list[str] | None  # для enum
+    kind: str                  # 'enum' | 'numeric'
+    options: list[str] | None  # ограничение для enum: список допустимых вариантов
     unit: str | None
     position: int
+    min_val: float | None = None  # ограничение для numeric: нижняя граница
+    max_val: float | None = None  # ограничение для numeric: верхняя граница
 
 
 @dataclass
@@ -119,9 +123,21 @@ class RecordingDB:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.executescript(_SCHEMA)
+        self._migrate()
         self.conn.commit()
         if self.get_setting("time_unit") is None:
             self.set_setting("time_unit", "h")
+
+    def _migrate(self) -> None:
+        """Добавить недостающие колонки в старые базы."""
+        cols = {r["name"] for r in self.conn.execute("PRAGMA table_info(properties)")}
+        for col in ("min_val", "max_val"):
+            if col not in cols:
+                self.conn.execute(f"ALTER TABLE properties ADD COLUMN {col} REAL")
+
+    def is_empty_schema(self) -> bool:
+        """Схема ещё не задана (нет ни свойств, ни измеряемых величин)."""
+        return not self.list_properties() and not self.list_measured_vars()
 
     def close(self) -> None:
         self.conn.close()
@@ -157,13 +173,15 @@ class RecordingDB:
     # ---------- схема: свойства-условия ----------
     def list_properties(self) -> list[Property]:
         rows = self.conn.execute(
-            "SELECT name,kind,options,unit,position FROM properties ORDER BY position"
+            "SELECT name,kind,options,unit,position,min_val,max_val "
+            "FROM properties ORDER BY position"
         ).fetchall()
         return [
             Property(
                 name=r["name"], kind=r["kind"],
                 options=json.loads(r["options"]) if r["options"] else None,
                 unit=r["unit"], position=r["position"],
+                min_val=r["min_val"], max_val=r["max_val"],
             )
             for r in rows
         ]
@@ -174,8 +192,10 @@ class RecordingDB:
         cur.execute("DELETE FROM properties")
         for i, p in enumerate(props):
             cur.execute(
-                "INSERT INTO properties(name,kind,options,unit,position) VALUES(?,?,?,?,?)",
-                (p.name, p.kind, json.dumps(p.options) if p.options else None, p.unit, i),
+                "INSERT INTO properties(name,kind,options,unit,position,min_val,max_val) "
+                "VALUES(?,?,?,?,?,?,?)",
+                (p.name, p.kind, json.dumps(p.options) if p.options else None,
+                 p.unit, i, p.min_val, p.max_val),
             )
         cur.commit()
 

@@ -50,8 +50,20 @@ class NewCurveDialog(QDialog):
                 w.currentIndexChanged.connect(self._refresh_name)
             else:
                 w = QLineEdit()
-                w.setValidator(QDoubleValidator())
-                w.setPlaceholderText("число" + (f", {p.unit}" if p.unit else ""))
+                validator = QDoubleValidator()
+                if p.min_val is not None:
+                    validator.setBottom(p.min_val)
+                if p.max_val is not None:
+                    validator.setTop(p.max_val)
+                w.setValidator(validator)
+                ph = "число"
+                if p.min_val is not None or p.max_val is not None:
+                    lo = "" if p.min_val is None else f"{p.min_val:g}"
+                    hi = "" if p.max_val is None else f"{p.max_val:g}"
+                    ph += f" {lo}..{hi}"
+                if p.unit:
+                    ph += f", {p.unit}"
+                w.setPlaceholderText(ph)
                 w.textChanged.connect(self._refresh_name)
             label = p.name + (f", {p.unit}" if p.unit and p.kind != "enum" else "")
             form.addRow(label + ":", w)
@@ -101,18 +113,27 @@ class NewCurveDialog(QDialog):
         if not name:
             QMessageBox.warning(self, "Новая кривая", "Укажите имя кривой.")
             return
-        # проверка числовых полей
+        # проверка числовых полей и границ
         for p in self.db.list_properties():
-            if p.kind == "numeric":
-                txt = self._editors[p.name].text().strip()
-                if txt:
-                    try:
-                        float(txt)
-                    except ValueError:
-                        QMessageBox.warning(
-                            self, "Новая кривая",
-                            f"Поле «{p.name}» должно быть числом.")
-                        return
+            if p.kind != "numeric":
+                continue
+            txt = self._editors[p.name].text().strip()
+            if not txt:
+                continue
+            try:
+                val = float(txt)
+            except ValueError:
+                QMessageBox.warning(self, "Новая кривая",
+                                   f"Поле «{p.name}» должно быть числом.")
+                return
+            if p.min_val is not None and val < p.min_val:
+                QMessageBox.warning(self, "Новая кривая",
+                                   f"«{p.name}»: не меньше {p.min_val:g}.")
+                return
+            if p.max_val is not None and val > p.max_val:
+                QMessageBox.warning(self, "Новая кривая",
+                                   f"«{p.name}»: не больше {p.max_val:g}.")
+                return
         self.accept()
 
     def result_data(self) -> tuple[str, dict[str, object], str]:

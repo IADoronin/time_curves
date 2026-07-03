@@ -34,7 +34,7 @@ class SchemaDialog(QDialog):
         super().__init__(parent)
         self.db = db
         self.setWindowTitle("Схема эксперимента")
-        self.resize(560, 520)
+        self.resize(720, 540)
         self._build()
         self._load()
 
@@ -52,16 +52,19 @@ class SchemaDialog(QDialog):
         # свойства-условия
         gp = QGroupBox("Свойства эксперимента (условия — лист meta)")
         gpv = QVBoxLayout(gp)
-        self.tbl_props = QTableWidget(0, 4)
+        self.tbl_props = QTableWidget(0, 6)
         self.tbl_props.setHorizontalHeaderLabels(
-            ["Имя", "Тип", "Варианты (через запятую)", "Единица"]
+            ["Имя", "Тип", "Варианты (через запятую)", "Мин", "Макс", "Единица"]
         )
         self.tbl_props.horizontalHeader().setSectionResizeMode(
             2, QHeaderView.ResizeMode.Stretch
         )
         gpv.addWidget(self.tbl_props)
         gpv.addLayout(self._row_buttons(self._add_prop_row, self.tbl_props))
-        gpv.addWidget(QLabel("«Варианты» нужны только для типа enum; для numeric игнорируются."))
+        gpv.addWidget(QLabel(
+            "enum — заполните «Варианты» (список допустимых значений). "
+            "numeric — можно задать «Мин»/«Макс» (границы) и «Единица»."
+        ))
         root.addWidget(gp)
 
         # измеряемые величины
@@ -95,7 +98,8 @@ class SchemaDialog(QDialog):
         return h
 
     # ---------- строки таблиц ----------
-    def _add_prop_row(self, name="", kind="enum", options="", unit="") -> None:
+    def _add_prop_row(self, name="", kind="enum", options="",
+                      min_v="", max_v="", unit="") -> None:
         r = self.tbl_props.rowCount()
         self.tbl_props.insertRow(r)
         self.tbl_props.setItem(r, 0, QTableWidgetItem(name))
@@ -104,7 +108,9 @@ class SchemaDialog(QDialog):
         cmb.setCurrentText(kind)
         self.tbl_props.setCellWidget(r, 1, cmb)
         self.tbl_props.setItem(r, 2, QTableWidgetItem(options))
-        self.tbl_props.setItem(r, 3, QTableWidgetItem(unit))
+        self.tbl_props.setItem(r, 3, QTableWidgetItem(min_v))
+        self.tbl_props.setItem(r, 4, QTableWidgetItem(max_v))
+        self.tbl_props.setItem(r, 5, QTableWidgetItem(unit))
 
     def _add_var_row(self, name="", unit="") -> None:
         r = self.tbl_vars.rowCount()
@@ -123,7 +129,10 @@ class SchemaDialog(QDialog):
         self.cmb_unit.setCurrentIndex(max(idx, 0))
         for p in self.db.list_properties():
             self._add_prop_row(
-                p.name, p.kind, ", ".join(p.options or []), p.unit or ""
+                p.name, p.kind, ", ".join(p.options or []),
+                "" if p.min_val is None else f"{p.min_val:g}",
+                "" if p.max_val is None else f"{p.max_val:g}",
+                p.unit or "",
             )
         for v in self.db.list_measured_vars():
             self._add_var_row(v.name, v.unit or "")
@@ -132,7 +141,8 @@ class SchemaDialog(QDialog):
         it = table.item(r, c)
         return it.text().strip() if it else ""
 
-    def _read_props(self) -> list[Property]:
+    def _read_props(self) -> list[Property] | None:
+        """Собрать свойства из таблицы; None при ошибке границ (с сообщением)."""
         props: list[Property] = []
         for r in range(self.tbl_props.rowCount()):
             name = self._cell(self.tbl_props, r, 0)
@@ -141,8 +151,22 @@ class SchemaDialog(QDialog):
             kind = self.tbl_props.cellWidget(r, 1).currentText()
             opts_raw = self._cell(self.tbl_props, r, 2)
             options = [o.strip() for o in opts_raw.replace(";", ",").split(",") if o.strip()]
-            unit = self._cell(self.tbl_props, r, 3) or None
-            props.append(Property(name, kind, options if kind == "enum" else None, unit, r))
+            unit = self._cell(self.tbl_props, r, 5) or None
+            min_v = max_v = None
+            if kind == "numeric":
+                try:
+                    mn = self._cell(self.tbl_props, r, 3)
+                    mx = self._cell(self.tbl_props, r, 4)
+                    min_v = float(mn) if mn else None
+                    max_v = float(mx) if mx else None
+                except ValueError:
+                    self._err(f"«{name}»: границы Мин/Макс должны быть числами.")
+                    return None
+                if min_v is not None and max_v is not None and min_v > max_v:
+                    self._err(f"«{name}»: Мин больше Макс.")
+                    return None
+            props.append(Property(name, kind, options if kind == "enum" else None,
+                                 unit, r, min_v, max_v))
         return props
 
     def _read_vars(self) -> list[MeasuredVar]:
@@ -157,6 +181,8 @@ class SchemaDialog(QDialog):
 
     def _on_accept(self) -> None:
         props = self._read_props()
+        if props is None:        # ошибка в границах — сообщение уже показано
+            return
         vars_ = self._read_vars()
 
         # валидация
