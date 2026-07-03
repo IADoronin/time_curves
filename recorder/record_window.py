@@ -26,6 +26,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from growth_viz.main_window import MainWindow as VizWindow
+
 from .db import RecordingDB
 from .new_curve_dialog import NewCurveDialog
 from .schema_dialog import SchemaDialog
@@ -39,6 +41,7 @@ class RecordWindow(QMainWindow):
         self.resize(1000, 640)
         self.db: RecordingDB | None = None
         self._value_edits: dict[str, QLineEdit] = {}
+        self._viz_window: VizWindow | None = None  # окно графиков (переиспользуем)
         self._build()
         if db is not None:
             self.set_db(db)
@@ -107,10 +110,13 @@ class RecordWindow(QMainWindow):
         tb = QHBoxLayout()
         self.btn_del_point = QPushButton("Удалить точку")
         self.btn_del_point.clicked.connect(self._delete_point)
+        self.btn_plots = QPushButton("Графики")
+        self.btn_plots.clicked.connect(self._open_plots)
         self.btn_export = QPushButton("Экспорт в Excel…")
         self.btn_export.clicked.connect(self._export_current)
         tb.addWidget(self.btn_del_point)
         tb.addStretch(1)
+        tb.addWidget(self.btn_plots)
         tb.addWidget(self.btn_export)
         rv.addLayout(tb)
         splitter.addWidget(right)
@@ -135,6 +141,11 @@ class RecordWindow(QMainWindow):
         act = QAction("Поля эксперимента (схема)…", self)
         act.triggered.connect(self._edit_schema)
         m_exp.addAction(act)
+
+        m_view = self.menuBar().addMenu("Вид")
+        act = QAction("Открыть графики", self)
+        act.triggered.connect(self._open_plots)
+        m_view.addAction(act)
 
     # ---------- БД ----------
     def set_db(self, db: RecordingDB) -> None:
@@ -368,6 +379,26 @@ class RecordWindow(QMainWindow):
             return
         paths = self.db.export_all(folder)
         self.statusBar().showMessage(f"Экспортировано файлов: {len(paths)}", 5000)
+
+    def _open_plots(self) -> None:
+        """Открыть окно визуализатора по текущим кривым (экспорт во вспом. папку)."""
+        if not self._require_db():
+            return
+        folder = self.db.path.parent / f"{self.db.path.stem}_plots"
+        folder.mkdir(exist_ok=True)
+        for f in folder.glob("*.xlsx"):     # убрать устаревшие/удалённые кривые
+            f.unlink()
+        paths = self.db.export_all(folder, skip_empty=True)
+        if not paths:
+            QMessageBox.information(self, "Графики", "Пока нет ни одной точки для построения.")
+            return
+        if self._viz_window is None:
+            self._viz_window = VizWindow()
+        self._viz_window.load_folder(folder)
+        self._viz_window.show()
+        self._viz_window.raise_()
+        self._viz_window.activateWindow()
+        self.statusBar().showMessage(f"Графики обновлены: кривых {len(paths)}", 4000)
 
     # ---------- утилиты ----------
     def _require_db(self) -> bool:

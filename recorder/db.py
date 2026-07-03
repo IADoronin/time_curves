@@ -351,11 +351,13 @@ class RecordingDB:
         write_sample(path, self.build_meta(curve_id), self.build_dataframe(curve_id))
         return path
 
-    def export_all(self, folder: str | Path) -> list[Path]:
+    def export_all(self, folder: str | Path, skip_empty: bool = False) -> list[Path]:
         folder = Path(folder)
         used: set[str] = set()
         paths: list[Path] = []
         for c in self.list_curves():
+            if skip_empty and not self.list_points(c.id):
+                continue
             base = _safe_filename(c.name)
             fname = f"{base}.xlsx"
             if fname in used:                       # избегаем коллизий имён
