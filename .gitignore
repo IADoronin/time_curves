@@ -5,6 +5,10 @@ __pycache__/
 .venv/
 .ipynb_checkpoints/
 
+# Сборки PyInstaller
+build/
+dist/
+
 # macOS
 .DS_Store
 

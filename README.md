@@ -6,6 +6,32 @@
   повторы (±SD), выравнивает сдвиг времени, экспортирует графики для статей.
 - **`record.py`** — запись данных: настройка схемы эксперимента, ведение кривых
   в SQLite, экспорт в те же `.xlsx` (см. раздел «Запись данных» ниже).
+- **`launcher.py`** — единый лаунчер с выбором приложения (используется в готовых
+  сборках).
+
+## Готовые сборки (Windows / macOS / Linux)
+
+Собранные приложения — на вкладке **[Releases](../../releases)** (создаются
+автоматически из тега `vX.Y.Z` через GitHub Actions):
+
+- **Windows** — `TimeCurves-windows.zip` → распаковать, запустить `TimeCurves.exe`.
+- **macOS** — `TimeCurves-macos.zip` → распаковать, запустить `TimeCurves.app`
+  (первый раз: ПКМ → «Открыть», т.к. бандл не подписан).
+- **Linux** — `TimeCurves-linux.tar.gz` → распаковать, запустить `./TimeCurves/TimeCurves`.
+
+Проверить сборку: `TimeCurves --selftest` (быстрый round-trip .xlsx, печатает `SELFTEST OK`).
+
+### Собрать самому
+
+Сборка идёт **на целевой ОС** (кросс-компиляция GUI невозможна):
+
+```bash
+pip install -r requirements.txt -r requirements-build.txt
+pyinstaller TimeCurves.spec --noconfirm      # результат в dist/
+```
+
+Релиз всех трёх ОС: `git tag v1.0.0 && git push --tags` — GitHub Actions соберёт
+и приложит артефакты к релизу.
 
 ## Визуализатор
 
