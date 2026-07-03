@@ -4,6 +4,7 @@ from .model import Sample
 from .loader import load_folder, load_sample, common_meta_keys
 from .grouping import Group, group_samples, aggregate
 from .alignment import apply_alignment, clear_alignment, THRESHOLD, MAX_RATE
+from .writer import write_sample
 
 __all__ = [
     "Sample",
@@ -17,4 +18,5 @@ __all__ = [
     "clear_alignment",
     "THRESHOLD",
     "MAX_RATE",
+    "write_sample",
 ]

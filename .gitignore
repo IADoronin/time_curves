@@ -12,3 +12,6 @@ __pycache__/
 tmp/
 figure.*
 *.tmp
+
+# Базы данных записи (SQLite)
+*.db
