@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QAction, QDoubleValidator
+from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QFileDialog,
     QFormLayout,
@@ -29,6 +29,7 @@ from PyQt6.QtWidgets import (
 from .db import RecordingDB
 from .new_curve_dialog import NewCurveDialog
 from .schema_dialog import SchemaDialog
+from .uiutil import double_validator, parse_float
 
 
 class RecordWindow(QMainWindow):
@@ -74,7 +75,7 @@ class RecordWindow(QMainWindow):
         ev = QVBoxLayout(self.entry_box)
         time_row = QHBoxLayout()
         self.ed_time = QLineEdit()
-        self.ed_time.setValidator(QDoubleValidator())
+        self.ed_time.setValidator(double_validator())
         self.ed_time.setPlaceholderText("время от старта")
         self.btn_now = QPushButton("Сейчас")
         self.btn_now.clicked.connect(self._fill_now)
@@ -215,7 +216,7 @@ class RecordWindow(QMainWindow):
             return
         for v in self.db.list_measured_vars():
             ed = QLineEdit()
-            ed.setValidator(QDoubleValidator())
+            ed.setValidator(double_validator())
             ed.setPlaceholderText("число" + (f", {v.unit}" if v.unit else ""))
             label = v.name + (f", {v.unit}" if v.unit else "")
             self.values_form.addRow(label + ":", ed)
@@ -256,7 +257,7 @@ class RecordWindow(QMainWindow):
             QMessageBox.warning(self, "Точка", "Укажите время (или нажмите «Сейчас»).")
             return
         try:
-            t = float(txt)
+            t = parse_float(txt)
         except ValueError:
             QMessageBox.warning(self, "Точка", "Время должно быть числом.")
             return
@@ -275,7 +276,7 @@ class RecordWindow(QMainWindow):
             if not s:
                 continue
             try:
-                values[name] = float(s)
+                values[name] = parse_float(s)
             except ValueError:
                 QMessageBox.warning(self, "Точка", f"Значение «{name}» должно быть числом.")
                 return

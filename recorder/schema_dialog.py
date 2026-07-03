@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
 )
 
 from .db import MeasuredVar, Property, RecordingDB
+from .uiutil import parse_float
 
 # Отображение единицы времени -> код.
 TIME_UNIT_LABELS = [("Часы", "h"), ("Минуты", "min"), ("Сутки", "d")]
@@ -157,8 +158,8 @@ class SchemaDialog(QDialog):
                 try:
                     mn = self._cell(self.tbl_props, r, 3)
                     mx = self._cell(self.tbl_props, r, 4)
-                    min_v = float(mn) if mn else None
-                    max_v = float(mx) if mx else None
+                    min_v = parse_float(mn) if mn else None
+                    max_v = parse_float(mx) if mx else None
                 except ValueError:
                     self._err(f"«{name}»: границы Мин/Макс должны быть числами.")
                     return None

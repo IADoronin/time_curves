@@ -6,7 +6,6 @@ import re
 from datetime import datetime
 
 from PyQt6.QtCore import QDateTime
-from PyQt6.QtGui import QDoubleValidator
 from PyQt6.QtWidgets import (
     QComboBox,
     QDateTimeEdit,
@@ -18,6 +17,7 @@ from PyQt6.QtWidgets import (
 )
 
 from .db import RecordingDB
+from .uiutil import double_validator, parse_float
 
 
 def _suggest_name(meta: dict[str, object]) -> str:
@@ -50,12 +50,7 @@ class NewCurveDialog(QDialog):
                 w.currentIndexChanged.connect(self._refresh_name)
             else:
                 w = QLineEdit()
-                validator = QDoubleValidator()
-                if p.min_val is not None:
-                    validator.setBottom(p.min_val)
-                if p.max_val is not None:
-                    validator.setTop(p.max_val)
-                w.setValidator(validator)
+                w.setValidator(double_validator(p.min_val, p.max_val))
                 ph = "число"
                 if p.min_val is not None or p.max_val is not None:
                     lo = "" if p.min_val is None else f"{p.min_val:g}"
@@ -121,7 +116,7 @@ class NewCurveDialog(QDialog):
             if not txt:
                 continue
             try:
-                val = float(txt)
+                val = parse_float(txt)
             except ValueError:
                 QMessageBox.warning(self, "Новая кривая",
                                    f"Поле «{p.name}» должно быть числом.")
