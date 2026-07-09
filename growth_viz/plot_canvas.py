@@ -28,6 +28,15 @@ class PlotCanvas(FigureCanvasQTAgg):
         self.ax = self.fig.add_subplot(111)
         self._settings = PlotSettings()  # последние применённые настройки
 
+    def set_cursor(self, cursor) -> None:  # noqa: D401 — переопределяем matplotlib
+        """Не менять курсор холста.
+
+        На новых macOS (Qt 6.11 + свежий SDK) смена курсора matplotlib приводит к
+        нативному крэшу в CoreGraphics/NSCursor (SIGTRAP). Отключаем смену курсора —
+        визуально теряем лишь крестик в режиме zoom/pan, стабильность важнее.
+        """
+        return
+
     @staticmethod
     def _rc_for(st: PlotSettings) -> dict:
         """rcParams для согласованного применения шрифта (в т.ч. к подписям осей)."""
