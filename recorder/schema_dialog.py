@@ -24,9 +24,6 @@ from PyQt6.QtWidgets import (
 from .db import MeasuredVar, Property, RecordingDB
 from .uiutil import parse_float
 
-# Отображение единицы времени -> код.
-TIME_UNIT_LABELS = [("Часы", "h"), ("Минуты", "min"), ("Сутки", "d")]
-
 
 class SchemaDialog(QDialog):
     """Редактор схемы: пишет изменения в БД при подтверждении."""
@@ -41,14 +38,6 @@ class SchemaDialog(QDialog):
 
     def _build(self) -> None:
         root = QVBoxLayout(self)
-
-        # единица времени
-        top = QFormLayout()
-        self.cmb_unit = QComboBox()
-        for label, code in TIME_UNIT_LABELS:
-            self.cmb_unit.addItem(label, code)
-        top.addRow("Единица времени:", self.cmb_unit)
-        root.addLayout(top)
 
         # свойства-условия
         gp = QGroupBox("Свойства эксперимента (условия — лист meta)")
@@ -126,8 +115,6 @@ class SchemaDialog(QDialog):
 
     # ---------- загрузка/чтение ----------
     def _load(self) -> None:
-        idx = self.cmb_unit.findData(self.db.time_unit)
-        self.cmb_unit.setCurrentIndex(max(idx, 0))
         for p in self.db.list_properties():
             self._add_prop_row(
                 p.name, p.kind, ", ".join(p.options or []),
@@ -199,7 +186,6 @@ class SchemaDialog(QDialog):
         if set(pnames) & set(vnames):
             return self._err("Свойство и измеряемая величина не должны иметь одинаковое имя.")
 
-        self.db.time_unit = self.cmb_unit.currentData()
         self.db.replace_properties(props)
         self.db.replace_measured_vars(vars_)
         self.accept()

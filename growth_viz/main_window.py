@@ -81,6 +81,14 @@ class MainWindow(QMainWindow):
             cb.setChecked(True)
             cb.stateChanged.connect(self._replot)
             dv.addWidget(cb)
+        # Ось X: часы от старта или абсолютные даты (актуально для datetime-данных).
+        axis_row = QFormLayout()
+        self.axis_combo = QComboBox()
+        self.axis_combo.addItem("Часы от старта", "elapsed")
+        self.axis_combo.addItem("Даты", "dates")
+        self.axis_combo.currentIndexChanged.connect(self._replot)
+        axis_row.addRow("Ось X:", self.axis_combo)
+        dv.addLayout(axis_row)
         pv.addWidget(disp)
 
         # --- коррекция сдвига времени (выравнивание) ---
@@ -231,6 +239,10 @@ class MainWindow(QMainWindow):
         value_col = self.value_combo.currentText()
         if not key or not value_col:
             return
+        # Режим оси X (часы от старта / даты) для всех образцов.
+        mode = self.axis_combo.currentData()
+        for s in self.samples:
+            s.time_mode = mode
         # Коррекция сдвига времени до группировки/усреднения.
         if self.cb_align.isChecked():
             apply_alignment(

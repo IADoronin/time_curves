@@ -2,6 +2,9 @@
 
 from .db import (
     Curve,
+    DATETIME_COLUMN,
+    FLAG_COUNT,
+    FLAG_LABELS,
     MeasuredVar,
     Point,
     Property,
@@ -18,4 +21,7 @@ __all__ = [
     "Point",
     "TIME_COLUMN",
     "TIME_UNITS",
+    "DATETIME_COLUMN",
+    "FLAG_COUNT",
+    "FLAG_LABELS",
 ]

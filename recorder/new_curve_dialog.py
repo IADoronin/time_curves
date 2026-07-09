@@ -5,10 +5,8 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
-from PyQt6.QtCore import QDateTime
 from PyQt6.QtWidgets import (
     QComboBox,
-    QDateTimeEdit,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -16,6 +14,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
 )
 
+from .datetime_edit import DateTimeEdit
 from .db import RecordingDB
 from .uiutil import double_validator, parse_float
 
@@ -69,10 +68,9 @@ class NewCurveDialog(QDialog):
         self.ed_name.textEdited.connect(self._on_name_edited)
         form.addRow("Имя кривой:", self.ed_name)
 
-        # время старта
-        self.dt_start = QDateTimeEdit(QDateTime.currentDateTime())
-        self.dt_start.setDisplayFormat("yyyy-MM-dd HH:mm:ss")
-        self.dt_start.setCalendarPopup(True)
+        # время старта (клавиатурный ввод + календарь)
+        self.dt_start = DateTimeEdit()
+        self.dt_start.setValue(datetime.now().replace(microsecond=0))
         form.addRow("Старт:", self.dt_start)
 
         bb = QDialogButtonBox(
@@ -129,9 +127,16 @@ class NewCurveDialog(QDialog):
                 QMessageBox.warning(self, "Новая кривая",
                                    f"«{p.name}»: не больше {p.max_val:g}.")
                 return
+        # проверка даты старта
+        try:
+            self.dt_start.value()
+        except ValueError:
+            QMessageBox.warning(self, "Новая кривая",
+                               "Старт: неверная дата. Формат «ГГГГ-ММ-ДД ЧЧ:ММ».")
+            return
         self.accept()
 
     def result_data(self) -> tuple[str, dict[str, object], str]:
         """(имя, meta, start_iso) — вызывать после exec()==Accepted."""
-        start = self.dt_start.dateTime().toPyDateTime().replace(microsecond=0)
+        start = self.dt_start.value().replace(microsecond=0)
         return self.ed_name.text().strip(), self._collect_meta(), start.isoformat(sep=" ")

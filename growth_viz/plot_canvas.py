@@ -95,14 +95,20 @@ class PlotCanvas(FigureCanvasQTAgg):
                             label=f"{g.label} (n={n})",
                         )
 
-            tcol = groups[0].samples[0].time_column if groups and groups[0].samples else "time"
-            self.ax.set_xlabel(tcol)
+            ref = groups[0].samples[0] if groups and groups[0].samples else None
+            self.ax.set_xlabel(self._x_label(ref))
             self.ax.set_ylabel(value_col)
             if st.title:
                 self.ax.set_title(st.title)
 
-            # Шаг осей.
-            if st.x_tick_step > 0:
+            # Ось дат: авто-локатор/форматтер вместо числового шага.
+            dates_axis = ref is not None and ref.is_datetime_time and ref.time_mode == "dates"
+            if dates_axis:
+                import matplotlib.dates as mdates
+                loc = mdates.AutoDateLocator()
+                self.ax.xaxis.set_major_locator(loc)
+                self.ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
+            elif st.x_tick_step > 0:
                 self.ax.xaxis.set_major_locator(MultipleLocator(st.x_tick_step))
             if st.y_tick_step > 0:
                 self.ax.yaxis.set_major_locator(MultipleLocator(st.y_tick_step))
@@ -114,6 +120,15 @@ class PlotCanvas(FigureCanvasQTAgg):
                 self.ax.legend(title=groups[0].key if groups else "", frameon=False)
 
             self.draw()
+
+    @staticmethod
+    def _x_label(ref) -> str:
+        """Подпись оси X в зависимости от типа времени и режима."""
+        if ref is None:
+            return "time"
+        if ref.is_datetime_time:
+            return "дата" if ref.time_mode == "dates" else "часы от старта"
+        return ref.time_column
 
     def export(self, path: str, settings: PlotSettings | None = None) -> None:
         """Сохранить текущий график в файл с заданными размером и DPI.
