@@ -7,7 +7,7 @@
 
 import sys
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules
 
 # openpyxl подключается pandas'ом динамически (по строке engine="openpyxl"),
 # прямого import нет — поэтому включаем его явно, иначе .xlsx не заработает.
@@ -16,11 +16,20 @@ hiddenimports = (
     + collect_submodules("openpyxl")
 )
 datas = collect_data_files("matplotlib")
+binaries = []
+
+# Принудительно собираем весь PyQt5 (QtCore/QtGui/QtWidgets + Qt5-DLL и плагины).
+# Без этого на некоторых сборках .pyd/.dll не попадают в бандл и на Windows
+# получаем "No module named PyQt5.QtCore".
+_pyqt5_datas, _pyqt5_binaries, _pyqt5_hidden = collect_all("PyQt5")
+datas += _pyqt5_datas
+binaries += _pyqt5_binaries
+hiddenimports += _pyqt5_hidden
 
 a = Analysis(
     ["launcher.py"],
     pathex=[],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
