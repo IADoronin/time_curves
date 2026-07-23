@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from PyQt6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -47,7 +47,7 @@ class SchemaDialog(QDialog):
             ["Имя", "Тип", "Варианты (через запятую)", "Мин", "Макс", "Единица"]
         )
         self.tbl_props.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeMode.Stretch
+            2, QHeaderView.Stretch
         )
         gpv.addWidget(self.tbl_props)
         gpv.addLayout(self._row_buttons(self._add_prop_row, self.tbl_props))
@@ -63,14 +63,14 @@ class SchemaDialog(QDialog):
         self.tbl_vars = QTableWidget(0, 2)
         self.tbl_vars.setHorizontalHeaderLabels(["Имя", "Единица"])
         self.tbl_vars.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
+            0, QHeaderView.Stretch
         )
         gvv.addWidget(self.tbl_vars)
         gvv.addLayout(self._row_buttons(self._add_var_row, self.tbl_vars))
         root.addWidget(gv)
 
         bb = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         )
         bb.accepted.connect(self._on_accept)
         bb.rejected.connect(self.reject)

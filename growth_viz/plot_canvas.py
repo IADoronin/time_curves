@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import matplotlib as mpl
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
-from PyQt6.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget
 
 from .grouping import Group, aggregate
 from .plot_settings import PlotSettings

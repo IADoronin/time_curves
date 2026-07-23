@@ -14,10 +14,15 @@
 Собранные приложения — на вкладке **[Releases](../../releases)** (создаются
 автоматически из тега `vX.Y.Z` через GitHub Actions):
 
-- **Windows** — `TimeCurves-windows.zip` → распаковать, запустить `TimeCurves.exe`.
+- **Windows 10/11** — `TimeCurves-windows.zip` → распаковать, запустить `TimeCurves.exe`.
 - **macOS** — `TimeCurves-macos.zip` → распаковать, запустить `TimeCurves.app`
   (первый раз: ПКМ → «Открыть», т.к. бандл не подписан).
 - **Linux** — `TimeCurves-linux.tar.gz` → распаковать, запустить `./TimeCurves/TimeCurves`.
+
+> **Эта ветка — `win7-legacy`.** Сборка на **Qt5 (PyQt5) + Python 3.8**, работает на
+> **Windows 7/8/10/11** (артефакт `TimeCurves-win7.zip`). Основная ветка `main` —
+> на Qt6, только Windows 10+. На Win 7 может понадобиться обновление
+> Universal C Runtime (KB2999226). Функционально ветки совпадают.
 
 Проверить сборку: `TimeCurves --selftest` (быстрый round-trip .xlsx, печатает `SELFTEST OK`).
 

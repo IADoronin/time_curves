@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
@@ -46,7 +46,7 @@ class MainWindow(QMainWindow):
 
     # ---------- построение интерфейса ----------
     def _build_ui(self) -> None:
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter = QSplitter(Qt.Horizontal)
 
         # --- левая панель управления ---
         panel = QWidget()
@@ -202,17 +202,17 @@ class MainWindow(QMainWindow):
         if key and self.samples:
             for g in group_samples(self.samples, key, only_enabled=False):
                 top = QTreeWidgetItem([f"{key} = {g.value}"])
-                top.setFlags(top.flags() | Qt.ItemFlag.ItemIsUserCheckable
-                             | Qt.ItemFlag.ItemIsAutoTristate)
+                top.setFlags(top.flags() | Qt.ItemIsUserCheckable
+                             | Qt.ItemIsAutoTristate)
                 self.tree.addTopLevelItem(top)
                 for s in g.samples:
                     child = QTreeWidgetItem([s.name])
-                    child.setFlags(child.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                    child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
                     child.setCheckState(
                         0,
-                        Qt.CheckState.Checked if s.enabled else Qt.CheckState.Unchecked,
+                        Qt.Checked if s.enabled else Qt.Unchecked,
                     )
-                    child.setData(0, Qt.ItemDataRole.UserRole, s)
+                    child.setData(0, Qt.UserRole, s)
                     top.addChild(child)
                 top.setExpanded(True)
         self._updating = False
@@ -220,9 +220,9 @@ class MainWindow(QMainWindow):
     def _on_item_changed(self, item: QTreeWidgetItem, _col: int) -> None:
         if self._updating:
             return
-        s = item.data(0, Qt.ItemDataRole.UserRole)
+        s = item.data(0, Qt.UserRole)
         if isinstance(s, Sample):
-            s.enabled = item.checkState(0) == Qt.CheckState.Checked
+            s.enabled = item.checkState(0) == Qt.Checked
             self._replot()
 
     # ---------- реакции ----------

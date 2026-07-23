@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from PyQt6.QtCore import QDate, pyqtSignal
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, QDate, pyqtSignal
+from PyQt5.QtWidgets import (
     QCalendarWidget,
     QDialog,
     QHBoxLayout,
@@ -60,7 +60,7 @@ class DateTimeEdit(QWidget):
 
         self.btn_cal = QPushButton("📅")
         self.btn_cal.setFixedWidth(34)
-        self.btn_cal.setFocusPolicy(self.btn_cal.focusPolicy().NoFocus)
+        self.btn_cal.setFocusPolicy(Qt.NoFocus)
         self.btn_cal.clicked.connect(self._pick_calendar)
         h.addWidget(self.btn_cal)
 

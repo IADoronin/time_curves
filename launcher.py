@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import sys
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
     QApplication,
     QFileDialog,
     QLabel,
@@ -34,12 +34,12 @@ class Launcher(QWidget):
 
         title = QLabel("Кривые роста")
         title.setStyleSheet("font-size: 20px; font-weight: 600;")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setAlignment(Qt.AlignCenter)
         v.addWidget(title)
 
         sub = QLabel("Выберите приложение")
         sub.setStyleSheet("color: gray;")
-        sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sub.setAlignment(Qt.AlignCenter)
         v.addWidget(sub)
         v.addSpacing(8)
 
@@ -63,7 +63,7 @@ class Launcher(QWidget):
     def _open_recorder(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
             self, "Новая или существующая база", "experiment.db", "SQLite (*.db)",
-            options=QFileDialog.Option.DontConfirmOverwrite,
+            options=QFileDialog.DontConfirmOverwrite,
         )
         if not path:
             return

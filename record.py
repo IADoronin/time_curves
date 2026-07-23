@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sys
 
-from PyQt6.QtWidgets import QApplication, QFileDialog
+from PyQt5.QtWidgets import QApplication, QFileDialog
 
 from recorder.db import RecordingDB
 from recorder.record_window import RecordWindow
@@ -25,7 +25,7 @@ def main() -> int:
     else:
         path, _ = QFileDialog.getSaveFileName(
             None, "Новая или существующая база", "experiment.db", "SQLite (*.db)",
-            options=QFileDialog.Option.DontConfirmOverwrite,
+            options=QFileDialog.DontConfirmOverwrite,
         )
         if path:
             db = RecordingDB(path)

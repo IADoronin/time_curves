@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
@@ -185,9 +185,9 @@ class SettingsPanel(QWidget):
         Это не даёт обрезаться длинным подписям в узкой правой колонке.
         """
         f = QFormLayout(parent)
-        f.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
-        f.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
-        f.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        f.setRowWrapPolicy(QFormLayout.WrapLongRows)
+        f.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        f.setLabelAlignment(Qt.AlignLeft)
         return f
 
     def _dspin(self, lo: float, hi: float, step: float, val: float) -> QDoubleSpinBox:

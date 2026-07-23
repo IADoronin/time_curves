@@ -12,7 +12,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 # openpyxl подключается pandas'ом динамически (по строке engine="openpyxl"),
 # прямого import нет — поэтому включаем его явно, иначе .xlsx не заработает.
 hiddenimports = (
-    ["matplotlib.backends.backend_qtagg", "et_xmlfile"]
+    ["matplotlib.backends.backend_qt5agg", "et_xmlfile"]
     + collect_submodules("openpyxl")
 )
 datas = collect_data_files("matplotlib")
@@ -26,7 +26,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["tkinter", "PyQt5", "PySide2", "PySide6", "scipy", "IPython", "pytest"],
+    excludes=["tkinter", "PyQt6", "PySide2", "PySide6", "scipy", "IPython", "pytest"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)

@@ -1,7 +1,7 @@
-# Проверено на Python 3.12 (conda env growth_viz).
-# Версии зафиксированы по рабочему окружению; при желании ослабьте до >=.
-PyQt6==6.11.0
-matplotlib==3.11.0
-pandas==3.0.3
+# Ветка win7-legacy: стек на Qt5 (PyQt5) под Python 3.8 — работает на Windows 7/8/10/11.
+# На main используется PyQt6/Qt6 (только Windows 10+).
+PyQt5==5.15.11
+matplotlib==3.7.5
+pandas==2.0.3
 openpyxl==3.1.5
-numpy==2.5.0
+numpy==1.24.4

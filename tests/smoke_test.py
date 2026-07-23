@@ -16,8 +16,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QTreeWidgetItem
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QTreeWidgetItem
 
 from growth_viz.main_window import MainWindow
 
@@ -55,8 +55,8 @@ def main() -> int:
         top = win.tree.topLevelItem(i)
         if top.childCount():
             child: QTreeWidgetItem = top.child(0)
-            sample = child.data(0, Qt.ItemDataRole.UserRole)
-            child.setCheckState(0, Qt.CheckState.Unchecked)
+            sample = child.data(0, Qt.UserRole)
+            child.setCheckState(0, Qt.Unchecked)
             assert sample.enabled is False, "снятие галки не отключило образец"
             print(f"[ok] выключен образец: {sample.name}")
             break

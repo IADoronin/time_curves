@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
-from PyQt6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -74,7 +74,7 @@ class NewCurveDialog(QDialog):
         form.addRow("Старт:", self.dt_start)
 
         bb = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         )
         bb.accepted.connect(self._on_accept)
         bb.rejected.connect(self.reject)

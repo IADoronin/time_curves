@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QLocale
-from PyQt6.QtGui import QDoubleValidator
+from PyQt5.QtCore import QLocale
+from PyQt5.QtGui import QDoubleValidator
 
 # Локаль C: десятичный разделитель — точка, без группировки разрядов.
 # Иначе при русской локали валидатор ждёт запятую и отклоняет «0.5».
-_C_LOCALE = QLocale(QLocale.Language.C)
+_C_LOCALE = QLocale(QLocale.C)
 
 
 def double_validator(bottom: float | None = None,
                      top: float | None = None) -> QDoubleValidator:
     v = QDoubleValidator()
     v.setLocale(_C_LOCALE)
-    v.setNotation(QDoubleValidator.Notation.StandardNotation)
+    v.setNotation(QDoubleValidator.StandardNotation)
     if bottom is not None:
         v.setBottom(bottom)
     if top is not None:

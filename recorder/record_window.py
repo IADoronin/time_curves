@@ -5,10 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QAction, QKeySequence, QShortcut
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import (
     QAbstractItemView,
+    QAction,
     QFileDialog,
     QFormLayout,
     QGroupBox,
@@ -21,6 +22,7 @@ from PyQt6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
+    QShortcut,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
@@ -53,21 +55,21 @@ class RecordWindow(QMainWindow):
     def _build(self) -> None:
         self._build_menu()
 
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter = QSplitter(Qt.Horizontal)
 
         # слева: список кривых + кнопки
         left = QWidget()
         lv = QVBoxLayout(left)
         lv.addWidget(QLabel("Кривые (ПКМ — флаги/удаление):"))
         self.curve_list = QListWidget()
-        self.curve_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.curve_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.curve_list.currentItemChanged.connect(self._on_select_curve)
-        self.curve_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.curve_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self.curve_list.customContextMenuRequested.connect(self._curve_menu)
         lv.addWidget(self.curve_list, stretch=1)
-        QShortcut(QKeySequence.StandardKey.Delete, self.curve_list,
+        QShortcut(QKeySequence.Delete, self.curve_list,
                   activated=self._delete_curves,
-                  context=Qt.ShortcutContext.WidgetShortcut)
+                  context=Qt.WidgetShortcut)
 
         self.btn_new = QPushButton("Новая кривая")
         self.btn_new.clicked.connect(self._new_curve)
@@ -93,7 +95,7 @@ class RecordWindow(QMainWindow):
         self.dt_time = DateTimeEdit()
         self.dt_time.returnPressed.connect(self._add_point)
         self.btn_now = QPushButton("Сейчас")
-        self.btn_now.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # Tab его пропускает
+        self.btn_now.setFocusPolicy(Qt.NoFocus)  # Tab его пропускает
         self.btn_now.clicked.connect(self._fill_now)
         self.lbl_time = QLabel("Дата/время:")
         time_row.addWidget(self.lbl_time)
@@ -120,13 +122,13 @@ class RecordWindow(QMainWindow):
 
         self.points_table = QTableWidget(0, 0)
         self.points_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows)
+            QAbstractItemView.SelectRows)
         self.points_table.setSelectionMode(
-            QAbstractItemView.SelectionMode.ExtendedSelection)
+            QAbstractItemView.ExtendedSelection)
         rv.addWidget(self.points_table, stretch=1)
-        QShortcut(QKeySequence.StandardKey.Delete, self.points_table,
+        QShortcut(QKeySequence.Delete, self.points_table,
                   activated=self._delete_points,
-                  context=Qt.ShortcutContext.WidgetShortcut)
+                  context=Qt.WidgetShortcut)
 
         tb = QHBoxLayout()
         self.btn_del_point = QPushButton("Удалить точки")
@@ -193,7 +195,7 @@ class RecordWindow(QMainWindow):
     def _open_db_dialog(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
             self, "Новая или существующая база", "experiment.db", "SQLite (*.db)",
-            options=QFileDialog.Option.DontConfirmOverwrite,
+            options=QFileDialog.DontConfirmOverwrite,
         )
         if path:
             if self.db is not None:
@@ -216,21 +218,21 @@ class RecordWindow(QMainWindow):
         for c in self.db.list_curves():
             mark = "✓ " if c.finished else "● "
             it = QListWidgetItem(f"{c.flag_prefix()}{mark}{c.name}")
-            it.setData(Qt.ItemDataRole.UserRole, c.id)
+            it.setData(Qt.UserRole, c.id)
             self.curve_list.addItem(it)
         self.curve_list.blockSignals(False)
         self._on_select_curve(self.curve_list.currentItem(), None)
 
     def _selected_curve_ids(self) -> list[int]:
-        ids = [it.data(Qt.ItemDataRole.UserRole) for it in self.curve_list.selectedItems()]
+        ids = [it.data(Qt.UserRole) for it in self.curve_list.selectedItems()]
         return ids
 
     def _current_curve_id(self) -> int | None:
         it = self.curve_list.currentItem()
-        return it.data(Qt.ItemDataRole.UserRole) if it else None
+        return it.data(Qt.UserRole) if it else None
 
     def _on_select_curve(self, cur, _prev) -> None:
-        cid = cur.data(Qt.ItemDataRole.UserRole) if cur else None
+        cid = cur.data(Qt.UserRole) if cur else None
         if cid is None:
             self.lbl_meta.setText("Кривая не выбрана")
             self.entry_box.setEnabled(False)
@@ -314,7 +316,7 @@ class RecordWindow(QMainWindow):
                 self, "Точка",
                 f"Время не позже предыдущего ({last:%Y-%m-%d %H:%M}). Всё равно добавить?",
             )
-            if resp != QMessageBox.StandardButton.Yes:
+            if resp != QMessageBox.Yes:
                 return
         values: dict[str, float] = {}
         for name, ed in self._value_edits.items():
@@ -350,7 +352,7 @@ class RecordWindow(QMainWindow):
         for r, p in enumerate(points):
             ts_txt = p.ts.strftime(DISPLAY_FORMAT) if p.ts else ""
             t_item = QTableWidgetItem(ts_txt)
-            t_item.setData(Qt.ItemDataRole.UserRole, p.id)
+            t_item.setData(Qt.UserRole, p.id)
             self.points_table.setItem(r, 0, t_item)
             for c, var in enumerate(vars_, start=1):
                 val = p.values.get(var)
@@ -365,8 +367,8 @@ class RecordWindow(QMainWindow):
         pids = []
         for r in rows:
             it = self.points_table.item(r, 0)
-            if it and it.data(Qt.ItemDataRole.UserRole) is not None:
-                pids.append(it.data(Qt.ItemDataRole.UserRole))
+            if it and it.data(Qt.UserRole) is not None:
+                pids.append(it.data(Qt.UserRole))
         for pid in pids:
             self.db.delete_point(pid)
         if pids:
@@ -393,7 +395,7 @@ class RecordWindow(QMainWindow):
 
     def _select_curve_id(self, cid: int) -> None:
         for i in range(self.curve_list.count()):
-            if self.curve_list.item(i).data(Qt.ItemDataRole.UserRole) == cid:
+            if self.curve_list.item(i).data(Qt.UserRole) == cid:
                 self.curve_list.setCurrentRow(i)
                 return
 
@@ -407,7 +409,7 @@ class RecordWindow(QMainWindow):
             self, "Удаление кривых",
             f"Удалить кривые ({len(ids)}): {preview}?\nТочки этих кривых тоже удалятся.",
         )
-        if resp != QMessageBox.StandardButton.Yes:
+        if resp != QMessageBox.Yes:
             return
         for i in ids:
             self.db.delete_curve(i)
@@ -417,7 +419,7 @@ class RecordWindow(QMainWindow):
         item = self.curve_list.itemAt(pos)
         if item is None:
             return
-        cid = item.data(Qt.ItemDataRole.UserRole)
+        cid = item.data(Qt.UserRole)
         flags = self.db.get_flags(cid)
         menu = QMenu(self)
         for i in range(FLAG_COUNT):
